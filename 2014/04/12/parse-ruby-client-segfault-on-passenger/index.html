@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>parse-ruby-client segfault on passenger &mdash; Gregorio Setti</title>
+    <link href="https://fonts.googleapis.com/css?family=Droid+Sans:400,700" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="/assets/main.css">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="/images/logo.png"/>
+    <link href="/feed.xml" rel="alternate" type="application/rss+xml" title="Gregorio Setti" />
+    <meta name="title" content="parse-ruby-client segfault on passenger ">
+    <link rel="canonical" href="http://desmondhume.github.io/2014/04/12/parse-ruby-client-segfault-on-passenger/">
+     
+           
+    <meta property="og:title" content="parse-ruby-client segfault on passenger "/>
+    <meta property="og:url" content="http://desmondhume.github.io/2014/04/12/parse-ruby-client-segfault-on-passenger/"/>
+    
+    
+    <meta property="og:description" content="Patron http-client as dependency of parse-ruby-client segfaults on phusion passenger, Faraday to the rescue."/>
+    <meta name="description" content="Patron http-client as dependency of parse-ruby-client segfaults on phusion passenger, Faraday to the rescue."/>
+    
+    <meta property="og:site_name" content="Gregorio Setti">     
+</head>
+<body>
+    
+<section class="site-nav">
+    <header>
+        <nav id="navigation">
+            <a href="/" class="home brand">Gregorio Setti</a>
+            
+        </nav>
+    </header>
+</section>
+
+
+<article>
+
+    <div class="container">
+        <header>
+            <div class="meta">
+                By <address><a rel="author" href="" title="Gregorio Setti" target="_blank">Gregorio Setti</a></address> &mdash;
+                <time pubdate datetime="2014-12-April" title="April 12, 2014">April 12, 2014</time>
+            </div>
+            <h1 class="title">parse-ruby-client segfault on passenger</h1>
+            
+        </header>
+
+        <section>
+            <h3 id="tldr">tl;dr</h3>
+
+<p>Patron as dependency of parse-ruby-client segfaults on phusion passenger, use <a href="https://github.com/chytreg/parse-ruby-client/tree/feature/faraday-client">this fork</a>, which use Faraday instead.</p>
+
+<p>I started working with <a href="https://parse.com/">Parse</a> few days ago, and the first thing I looked for was a ruby client to avoid reinventing the wheel mapping the REST api.<br />Parse lists some repos, including <a href="https://github.com/adelevie/parse-ruby-client">parse-ruby-client</a>. The library does not implement every single Parse method, but still offers useful helpers. For example, users cannot be updated with an ad-hoc method, but you can simply use the http-client to call the REST api, crafting the call according to the <a href="https://parse.com/docs/rest">docs</a>.</p>
+
+<p>Everything’s cool, I start my thin server, and it works like a charm. Then I switch to <a href="https://www.phusionpassenger.com/">Passenger</a>, so that everything is integrated with my apache (I know, nginx would be cooler).</p>
+
+<p>Everything’s not as cool as it was with thin. Server respond 500 to every not-GET call (POST and PUT).</p>
+
+<p>Passenger logs state so:</p>
+<div class='highlight'><pre><code class='bash'>App 87866 stderr: /Users/gregorio/.rvm/gems/ruby-2.1.1/gems/patron-0.4.18/lib/patron/session.rb:223: <span class='o'>[</span>BUG<span class='o'>]</span> 
+App 87866 stderr: Segmentation fault at 0x00000000000110
+App 87866 stderr: ruby 2.1.1p76 <span class='o'>(</span>2014-02-24 revision 45161<span class='o'>)</span> <span class='o'>[</span>x86_64-darwin13.0<span class='o'>]</span>
+App 87866 stderr: 
+App 87866 stderr: -- Crash Report log information --------------------------------------------
+App 87866 stderr:    See Crash Report log file under the one of following:
+App 87866 stderr:      * ~/Library/Logs/CrashReporter
+App 87866 stderr:      * /Library/Logs/CrashReporter
+App 87866 stderr:      * ~/Library/Logs/DiagnosticReports
+App 87866 stderr:      * /Library/Logs/DiagnosticReports
+App 87866 stderr:    <span class='k'>for </span>more details.
+App 87866 stderr: 
+App 87866 stderr: -- Control frame information -----------------------------------------------
+App 87866 stderr: c:0087 p:---- s:0488 e:000487 CFUNC  :handle_request
+</code></pre></div>
+<p><a href="https://github.com/toland/patron">Patron</a> is a dependency of parse-ruby-client, and it’s the http-client of the library.<br />After trying to change ruby version (2.1.0 and 1.9.3-p545), and finding these changes uneffective, the only way to solve the segfault problem is to avoid Patron as http-client.</p>
+
+<p>Fortunately, <a href="https://github.com/chytreg">somebody</a> forked the repo and substituted Patron with <a href="https://github.com/lostisland/faraday">Faraday</a>.</p>
+
+<p>Here is the fork: <a href="https://github.com/chytreg/parse-ruby-client/tree/feature/faraday-client">https://github.com/chytreg/parse-ruby-client/tree/feature/faraday-client</a></p>
+
+<p>I simply changed the line in my Gemfile from this:</p>
+<div class='highlight'><pre><code class='ruby'><span class='n'>gem</span> <span class='s1'>&#39;parse-ruby-client&#39;</span>
+</code></pre></div>
+<p>to this:</p>
+<div class='highlight'><pre><code class='ruby'><span class='n'>gem</span> <span class='s1'>&#39;parse-ruby-client&#39;</span><span class='p'>,</span> <span class='ss'>git</span><span class='p'>:</span> <span class='s1'>&#39;git://github.com/chytreg/parse-ruby-client&#39;</span><span class='p'>,</span> <span class='ss'>branch</span><span class='p'>:</span> <span class='s1'>&#39;feature/faraday-client&#39;</span>
+</code></pre></div>
+<p>and presto!</p>
+            
+<div class="social">
+    <div>
+        <a href="https://twitter.com/share" class="twitter-share-button"  data-text="parse-ruby-client segfault on passenger" data-related="sblebborio">Tweet</a>
+    </div>
+    
+    
+    <div>
+        <div class="fb-like" data-width="150" data-layout="button_count" data-action="like" data-show-faces="true" data-send="false"></div>
+    </div>
+    
+    
+    
+    
+</div>
+
+        </section>
+
+        <footer>
+            <address>
+               
+                <p>Written by <strong><a rel="author" href="https://twitter.com/" title="" target="_blank">Gregorio Setti</a></strong><br>
+                <span class="muted">Web developer</span>
+                </p>
+            </address>
+
+        </footer>
+
+        
+    </div>
+</article>
+
+
+<footer class="site-footer">
+    <div class="container">
+        &copy; 2014 
+        
+        <nav>
+            <a href="http://digitalnatives.it/">Digital Natives</a> &middot;
+            <a href="/">Blog</a> &middot;
+            
+        </nav>
+        
+        <nav class="social">
+            
+            <a href="https://twitter.com/sblebborio" title="Follow on Twitter" target="_blank"><i class="icon icon-twitter black"></i></a>
+            
+            
+            <a href="http://facebook.com/gregorio.setti" title="Follow on Facebook" target="_blank"><i class="icon icon-facebook black"></i></a>
+                
+            
+            <a href="http://github.com/desmondhume" title="Github" target="_blank"><i class="icon icon-github black"></i></a>
+            
+        </nav>
+    </div>
+</footer>
+
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="/assets/main.js"></script>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=253595308025739";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title></title>
+    <link>http://desmondhume.github.io</link>
+    <atom:link href="http://desmondhume.github.io/feed.xml" rel="self" type="application/rss+xml" />
+    <description></description>
+    <language>en-us</language>
+    <pubDate>Sat, 12 Apr 2014 21:50:42 +0000</pubDate>
+    <lastBuildDate>Sat, 12 Apr 2014 21:50:42 +0000</lastBuildDate>
+
+    
+    
+    <item>
+      <title>parse-ruby-client segfault on passenger</title>
+      <link>http://desmondhume.github.io/2014/04/12/parse-ruby-client-segfault-on-passenger/</link>
+      <pubDate>Sat, 12 Apr 2014 00:00:00 +0000</pubDate>
+      <author></author>
+      <guid>http://desmondhume.github.io/2014/04/12/parse-ruby-client-segfault-on-passenger</guid>
+      <description>&lt;h3 id=&quot;tldr&quot;&gt;tl;dr&lt;/h3&gt;
+
+&lt;p&gt;Patron as dependency of parse-ruby-client segfaults on phusion passenger, use &lt;a href=&quot;https://github.com/chytreg/parse-ruby-client/tree/feature/faraday-client&quot;&gt;this fork&lt;/a&gt;, which use Faraday instead.&lt;/p&gt;
+
+&lt;p&gt;I started working with &lt;a href=&quot;https://parse.com/&quot;&gt;Parse&lt;/a&gt; few days ago, and the first thing I looked for was a ruby client to avoid reinventing the wheel mapping the REST api.&lt;br /&gt;Parse lists some repos, including &lt;a href=&quot;https://github.com/adelevie/parse-ruby-client&quot;&gt;parse-ruby-client&lt;/a&gt;. The library does not implement every single Parse method, but still offers useful helpers. For example, users cannot be updated with an ad-hoc method, but you can simply use the http-client to call the REST api, crafting the call according to the &lt;a href=&quot;https://parse.com/docs/rest&quot;&gt;docs&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Everything’s cool, I start my thin server, and it works like a charm. Then I switch to &lt;a href=&quot;https://www.phusionpassenger.com/&quot;&gt;Passenger&lt;/a&gt;, so that everything is integrated with my apache (I know, nginx would be cooler).&lt;/p&gt;
+
+&lt;p&gt;Everything’s not as cool as it was with thin. Server respond 500 to every not-GET call (POST and PUT).&lt;/p&gt;
+
+&lt;p&gt;Passenger logs state so:&lt;/p&gt;
+&lt;div class=&#39;highlight&#39;&gt;&lt;pre&gt;&lt;code class=&#39;bash&#39;&gt;App 87866 stderr: /Users/gregorio/.rvm/gems/ruby-2.1.1/gems/patron-0.4.18/lib/patron/session.rb:223: &lt;span class=&#39;o&#39;&gt;[&lt;/span&gt;BUG&lt;span class=&#39;o&#39;&gt;]&lt;/span&gt; 
+App 87866 stderr: Segmentation fault at 0x00000000000110
+App 87866 stderr: ruby 2.1.1p76 &lt;span class=&#39;o&#39;&gt;(&lt;/span&gt;2014-02-24 revision 45161&lt;span class=&#39;o&#39;&gt;)&lt;/span&gt; &lt;span class=&#39;o&#39;&gt;[&lt;/span&gt;x86_64-darwin13.0&lt;span class=&#39;o&#39;&gt;]&lt;/span&gt;
+App 87866 stderr: 
+App 87866 stderr: -- Crash Report log information --------------------------------------------
+App 87866 stderr:    See Crash Report log file under the one of following:
+App 87866 stderr:      * ~/Library/Logs/CrashReporter
+App 87866 stderr:      * /Library/Logs/CrashReporter
+App 87866 stderr:      * ~/Library/Logs/DiagnosticReports
+App 87866 stderr:      * /Library/Logs/DiagnosticReports
+App 87866 stderr:    &lt;span class=&#39;k&#39;&gt;for &lt;/span&gt;more details.
+App 87866 stderr: 
+App 87866 stderr: -- Control frame information -----------------------------------------------
+App 87866 stderr: c:0087 p:---- s:0488 e:000487 CFUNC  :handle_request
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;&lt;a href=&quot;https://github.com/toland/patron&quot;&gt;Patron&lt;/a&gt; is a dependency of parse-ruby-client, and it’s the http-client of the library.&lt;br /&gt;After trying to change ruby version (2.1.0 and 1.9.3-p545), and finding these changes uneffective, the only way to solve the segfault problem is to avoid Patron as http-client.&lt;/p&gt;
+
+&lt;p&gt;Fortunately, &lt;a href=&quot;https://github.com/chytreg&quot;&gt;somebody&lt;/a&gt; forked the repo and substituted Patron with &lt;a href=&quot;https://github.com/lostisland/faraday&quot;&gt;Faraday&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Here is the fork: &lt;a href=&quot;https://github.com/chytreg/parse-ruby-client/tree/feature/faraday-client&quot;&gt;https://github.com/chytreg/parse-ruby-client/tree/feature/faraday-client&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;I simply changed the line in my Gemfile from this:&lt;/p&gt;
+&lt;div class=&#39;highlight&#39;&gt;&lt;pre&gt;&lt;code class=&#39;ruby&#39;&gt;&lt;span class=&#39;n&#39;&gt;gem&lt;/span&gt; &lt;span class=&#39;s1&#39;&gt;&amp;#39;parse-ruby-client&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;to this:&lt;/p&gt;
+&lt;div class=&#39;highlight&#39;&gt;&lt;pre&gt;&lt;code class=&#39;ruby&#39;&gt;&lt;span class=&#39;n&#39;&gt;gem&lt;/span&gt; &lt;span class=&#39;s1&#39;&gt;&amp;#39;parse-ruby-client&amp;#39;&lt;/span&gt;&lt;span class=&#39;p&#39;&gt;,&lt;/span&gt; &lt;span class=&#39;ss&#39;&gt;git&lt;/span&gt;&lt;span class=&#39;p&#39;&gt;:&lt;/span&gt; &lt;span class=&#39;s1&#39;&gt;&amp;#39;git://github.com/chytreg/parse-ruby-client&amp;#39;&lt;/span&gt;&lt;span class=&#39;p&#39;&gt;,&lt;/span&gt; &lt;span class=&#39;ss&#39;&gt;branch&lt;/span&gt;&lt;span class=&#39;p&#39;&gt;:&lt;/span&gt; &lt;span class=&#39;s1&#39;&gt;&amp;#39;feature/faraday-client&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;and presto!&lt;/p&gt;</description>
+    </item>
+    
+    
+
+  </channel> 
+</rss>
