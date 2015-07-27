@@ -3,22 +3,32 @@
 ---
 @charset "utf-8";
 
+@font-face {
+  font-family: 'Onesize';
+  src: url('./fonts/ONESIZE_.eot'); /* IE9 Compat Modes */
+  src: url('./fonts/ONESIZE_.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('./fonts/ONESIZE_.woff') format('woff'), /* Modern Browsers */
+       url('./fonts/ONESIZE_.ttf')  format('truetype'), /* Safari, Android, iOS */
+       url('./fonts/ONESIZE_.svg#be0cd6a30dae18bf7640c6b25c4ce317') format('svg'); /* Legacy iOS */
 
+  font-style:   normal;
+  font-weight:  400;
+}
 
 // Our variables
 $base-font-family: Helvetica, Arial, sans-serif;
 $base-font-size:   16px;
-$small-font-size:  $base-font-size * 0.875;
+$small-font-size:  14px;
 $base-line-height: 1.5;
 
 $spacing-unit:     30px;
 
-$text-color:       #111;
-$background-color: #fdfdfd;
-$brand-color:      #2a7ae2;
+$text-color:       #000;
+$background-color: #fff;
+$brand-color:      #000;
 
-$grey-color:       #828282;
-$grey-color-light: lighten($grey-color, 40%);
+$grey-color:       #fbfbfb;
+$grey-color-light: lighten($grey-color, 50%);
 $grey-color-dark:  darken($grey-color, 25%);
 
 // Width of the content area
